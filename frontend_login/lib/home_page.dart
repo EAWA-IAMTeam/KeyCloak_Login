@@ -106,8 +106,9 @@
 // }
 
 import 'package:flutter/material.dart';
-import 'package:frontend_login/login_page.dart';  // Import the LoginPage to navigate back
+import 'package:frontend_login/login_page.dart'; // Import the LoginPage to navigate back
 import 'dart:html' as html;
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatelessWidget {
   final String googleAccessToken;
@@ -124,17 +125,42 @@ class HomePage extends StatelessWidget {
   }) : super(key: key);
 
   // Function to handle logout
-  void _logout(BuildContext context) {
+  Future<void> _logout(BuildContext context) async {
     // Clear all tokens from localStorage
-    html.window.localStorage.remove('googleAccessToken');
-    html.window.localStorage.remove('keycloakAccessToken');
-    html.window.localStorage.remove('keycloakRefreshToken');
-    
-    // Navigate back to the Login page
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),  // Redirect to login page
-    );
+    html.window.localStorage.clear(); // Clear all local storage
+
+    final keycloakLogoutUrl =
+        'http://localhost:8080/realms/G-SSO-Connect/protocol/openid-connect/logout';
+
+    // Perform Keycloak logout by calling Keycloak's logout endpoint
+    try {
+      // Send a POST request to the Keycloak logout endpoint
+      final response = await http.post(
+        Uri.parse(keycloakLogoutUrl),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {
+          'client_id': 'frontend-login',
+          'client_secret': '0SSZj01TDs7812fLBxgwTKPA74ghnLQM',
+          'refresh_token': keycloakRefreshToken, // Pass the refresh token here
+        },
+      );
+
+      if (response.statusCode == 204) {
+        // If logout is successful on Keycloak, redirect to the Login page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      } else {
+        // Handle logout failure
+        print('Error logging out from Keycloak: ${response.statusCode}');
+      }
+    } catch (error) {
+      // Handle the error (e.g., network issues)
+      print('Error during Keycloak logout: $error');
+    }
   }
 
   @override
@@ -185,6 +211,8 @@ class HomePage extends StatelessWidget {
   }
 }
 
+
+
 // import 'package:flutter/material.dart';
 // import 'package:http/http.dart' as http;
 // import 'dart:convert';
@@ -217,7 +245,7 @@ class HomePage extends StatelessWidget {
 //         'grant_type': 'authorization_code',
 //         'code': googleAccessToken,
 //         'client_id': 'frontend-login',
-//         'client_secret': '', // Replace with actual client secret
+//         'client_secret': '0SSZj01TDs7812fLBxgwTKPA74ghnLQM', // Replace with actual client secret
 //         'redirect_uri': 'http://localhost:8080/realms/G-SSO-Connect/broker/google/endpoint',
 //       },
 //       headers: {
@@ -317,7 +345,7 @@ class HomePage extends StatelessWidget {
 //         'grant_type': 'authorization_code', // Token exchange grant type
 //         'code': googleAccessToken, // Pass the Google access token to Keycloak
 //         'client_id': 'frontend-login', // Keycloak client ID
-//         'client_secret': '', // Keycloak client secret if needed
+//         'client_secret': 'lZeIgAJwmPgdTjkr4q90Q8cFl2EcrMza', // Keycloak client secret if needed
 //         'redirect_uri': 'http://localhost:8080/realms/G-SSO-Connect/broker/google/endpoint', // The redirect URI used for OAuth
 //       },
 //       headers: {
@@ -438,7 +466,7 @@ class HomePage extends StatelessWidget {
 //         'grant_type': 'authorization_code', // Token exchange grant type
 //         'code': googleAccessToken, // Pass the Google access token to Keycloak
 //         'client_id': 'frontend-login', // Keycloak client ID
-//         'client_secret': '', // Keycloak client secret if needed
+//         'client_secret': 'lZeIgAJwmPgdTjkr4q90Q8cFl2EcrMza', // Keycloak client secret if needed
 //         'redirect_uri': 'http://localhost:8080/realms/G-SSO-Connect/broker/google/endpoint', // The redirect URI used for OAuth
 //       },
 //       headers: {

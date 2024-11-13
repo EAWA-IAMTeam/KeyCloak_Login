@@ -43,7 +43,7 @@
 //   Future<String?> _getGoogleAccessToken() async {
 //     html.window.open(
 //       'https://accounts.google.com/o/oauth2/v2/auth?'
-//       'client_id=&'
+//       'client_id=950385657379-k0kk7l3nvdm8cbgp31fjvet0c5neluc7.apps.googleusercontent.com&'
 //       'redirect_uri=http://localhost:3001/callback.html&' // Updated redirect URI to match Google Cloud Console
 //       'response_type=token&'
 //       'scope=email profile openid',
@@ -78,7 +78,7 @@
 //       'grant_type': 'urn:ietf:params:oauth:grant-type:token-exchange', // Token exchange grant type
 //       'subject_token': googleAccessToken, // Google access token
 //       'client_id': 'frontend-login',
-//       'client_secret': '',
+//       'client_secret': '0SSZj01TDs7812fLBxgwTKPA74ghnLQM',
 //       'subject_issuer': 'google', // Set this to the identity provider alias for Google in Keycloak
 //     },
 //     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -197,7 +197,7 @@
 //   Future<String?> _getGoogleAccessToken() async {
 //     html.window.open(
 //       'https://accounts.google.com/o/oauth2/v2/auth?'
-//       'client_id=&'
+//       'client_id=950385657379-k0kk7l3nvdm8cbgp31fjvet0c5neluc7.apps.googleusercontent.com&'
 //       'redirect_uri=http://localhost:3001/callback.html&'
 //       'response_type=token&'
 //       'scope=email profile openid',
@@ -231,7 +231,7 @@
 //         'grant_type': 'urn:ietf:params:oauth:grant-type:token-exchange',
 //         'subject_token': googleAccessToken,
 //         'client_id': 'frontend-login',
-//         'client_secret': '',
+//         'client_secret': '0SSZj01TDs7812fLBxgwTKPA74ghnLQM',
 //         'subject_issuer': 'google',
 //       },
 //       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -292,7 +292,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _checkForKeycloakToken();
+    //_checkForKeycloakToken();
   }
 
   // Check if the Keycloak token exists in localStorage and redirect if it does
@@ -310,6 +310,9 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       );
+    }
+    else{
+      handleSignIn();
     }
   }
 
@@ -347,7 +350,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<String?> _getGoogleAccessToken() async {
     html.window.open(
       'https://accounts.google.com/o/oauth2/v2/auth?'
-      'client_id=&'
+      'client_id=950385657379-k0kk7l3nvdm8cbgp31fjvet0c5neluc7.apps.googleusercontent.com&'
       'redirect_uri=http://localhost:3001/callback.html&'
       'response_type=token&'
       'scope=email profile openid',
@@ -379,7 +382,7 @@ class _LoginPageState extends State<LoginPage> {
         'grant_type': 'urn:ietf:params:oauth:grant-type:token-exchange', // Token exchange grant type
         'subject_token': googleAccessToken, // Google access token
         'client_id': 'frontend-login',
-        'client_secret': '',
+        'client_secret': '0SSZj01TDs7812fLBxgwTKPA74ghnLQM',
         'subject_issuer': 'google', // Set this to the identity provider alias for Google in Keycloak
       },
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -414,7 +417,7 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(title: Text('Login Page')),
       body: Center(
         child: ElevatedButton(
-          onPressed: handleSignIn,
+        onPressed: _checkForKeycloakToken,
           child: Text('Sign in with Google'),
         ),
       ),
