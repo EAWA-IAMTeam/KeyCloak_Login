@@ -44,7 +44,7 @@
 //     html.window.open(
 //       'https://accounts.google.com/o/oauth2/v2/auth?'
 //       'client_id=950385657379-k0kk7l3nvdm8cbgp31fjvet0c5neluc7.apps.googleusercontent.com&'
-//       'redirect_uri=http://localhost:3001/callback.html&' // Updated redirect URI to match Google Cloud Console
+//       'redirect_uri=${Config.server}:3001/callback.html&' // Updated redirect URI to match Google Cloud Console
 //       'response_type=token&'
 //       'scope=email profile openid',
 //       'google_sign_in_popup',
@@ -70,7 +70,7 @@
 //   }
 
 //   Future<Map<String, dynamic>?> _exchangeGoogleTokenForKeycloakTokens(String googleAccessToken) async {
-//   final String keycloakUrl = 'http://localhost:8080/realms/G-SSO-Connect/protocol/openid-connect/token';
+//   final String keycloakUrl = '${Config.server}:8080/realms/G-SSO-Connect/protocol/openid-connect/token';
   
 //   final response = await http.post(
 //     Uri.parse(keycloakUrl),
@@ -107,7 +107,7 @@
 //     return decodedMap['email']; // Assuming 'email' is the key in the payload
 //   }
 //     // final response = await http.get(
-//     //   Uri.parse('http://localhost:8080/realms/G-SSO-Connect/protocol/openid-connect/userinfo'),
+//     //   Uri.parse('${Config.server}:8080/realms/G-SSO-Connect/protocol/openid-connect/userinfo'),
 //     //   headers: {'Authorization': 'Bearer $keycloakAccessToken'},
 //     // );
 
@@ -198,7 +198,7 @@
 //     html.window.open(
 //       'https://accounts.google.com/o/oauth2/v2/auth?'
 //       'client_id=950385657379-k0kk7l3nvdm8cbgp31fjvet0c5neluc7.apps.googleusercontent.com&'
-//       'redirect_uri=http://localhost:3001/callback.html&'
+//       'redirect_uri=${Config.server}:3001/callback.html&'
 //       'response_type=token&'
 //       'scope=email profile openid',
 //       'google_sign_in_popup',
@@ -223,7 +223,7 @@
 //   }
 
 //   Future<Map<String, dynamic>?> _exchangeGoogleTokenForKeycloakTokens(String googleAccessToken) async {
-//     final String keycloakUrl = 'http://localhost:8080/realms/G-SSO-Connect/protocol/openid-connect/token';
+//     final String keycloakUrl = '${Config.server}:8080/realms/G-SSO-Connect/protocol/openid-connect/token';
     
 //     final response = await http.post(
 //       Uri.parse(keycloakUrl),
@@ -275,6 +275,7 @@
 // }
 
 import 'package:flutter/material.dart';
+import 'package:frontend_login/config.dart';
 import 'package:frontend_login/home_page.dart';
 import 'dart:html' as html;
 import 'package:http/http.dart' as http;
@@ -351,7 +352,7 @@ class _LoginPageState extends State<LoginPage> {
     html.window.open(
       'https://accounts.google.com/o/oauth2/v2/auth?'
       'client_id=950385657379-k0kk7l3nvdm8cbgp31fjvet0c5neluc7.apps.googleusercontent.com&'
-      'redirect_uri=http://localhost:3001/callback.html&'
+      'redirect_uri=${Config.server}:3001/callback.html&'
       'response_type=token&'
       'scope=email profile openid',
       'google_sign_in_popup',
@@ -374,7 +375,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<Map<String, dynamic>?> _exchangeGoogleTokenForKeycloakTokens(String googleAccessToken) async {
-    final String keycloakUrl = 'http://localhost:8080/realms/G-SSO-Connect/protocol/openid-connect/token';
+    final String keycloakUrl = '${Config.server}:8080/realms/G-SSO-Connect/protocol/openid-connect/token';
     
     final response = await http.post(
       Uri.parse(keycloakUrl),
