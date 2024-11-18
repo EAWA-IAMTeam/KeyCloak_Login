@@ -18,10 +18,10 @@
 
   <script>
     // Check if there’s a token in localStorage
-    if (window.localStorage.getItem('googleAccessToken')) {
-      // Redirect to home page if the token exists
-      window.location.href = '/home';
-    }
+    if (window.localStorage.getItem('googleAccessToken') &&
+    window.localStorage.getItem('keycloakAccessToken')) {
+  window.location.href = '/home';
+}
   </script>
 
   <!-- Google Sign-In script -->
