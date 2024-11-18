@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:frontend_login/config.dart';
 import 'package:http/http.dart' as http;
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:frontend_login/config.dart';
 
 class JoinCompanyPage extends StatefulWidget {
-  final String keycloakAccessToken; // Accept access token from the previous page
-
+  final String keycloakAccessToken;
   const JoinCompanyPage({Key? key, required this.keycloakAccessToken}) : super(key: key);
 
   @override
@@ -14,88 +14,162 @@ class JoinCompanyPage extends StatefulWidget {
 
 class _JoinCompanyPageState extends State<JoinCompanyPage> {
   final _formKey = GlobalKey<FormState>();
-  String companyCode = '';
-  String? errorMessage;
-  String? user_id; // Store the user ID
+  String subgroupId = '';
+  String message = '';
 
-  // Updated Keycloak server details
-  final String keycloakUrl = '${Config.server}:8080';
-  final String realmName = 'G-SSO-Connect';
+  final String keycloakUrl = '${Config.server}:8080/admin/realms/G-SSO-Connect';
+  final String clientId = 'frontend-login';
+  final String clientSecret = '0SSZj01TDs7812fLBxgwTKPA74ghnLQM';
+  final String clientRole = 'Admin';
 
-  // Function to fetch user info and user ID from Keycloak
-  Future<void> fetchUserInfo() async {
-    Map<String, dynamic> userDetail = {}; // Store the response as a Map
-
-    final userInfoUrl = '$keycloakUrl/realms/$realmName/protocol/openid-connect/userinfo';
+  Future<String?> _getClientAccessToken() async {
+    final keycloakTokenUrl = '${Config.server}:8080/realms/G-SSO-Connect/protocol/openid-connect/token';
 
     try {
-      final response = await http.get(
-        Uri.parse(userInfoUrl),
+      final response = await http.post(
+        Uri.parse(keycloakTokenUrl),
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${widget.keycloakAccessToken}', // Use the access token here
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {
+          'client_id': clientId,
+          'client_secret': clientSecret,
+          'grant_type': 'client_credentials',
         },
       );
 
       if (response.statusCode == 200) {
-        final userInfo = json.decode(response.body);
-        print("User Info: ${userInfo.toString()}");
-        setState(() {
-          userDetail = userInfo; // Store the decoded response as a Map
-          user_id = userDetail['sub']; // Extract the user ID
-        });
+        final data = json.decode(response.body);
+        return data['access_token'];
       } else {
-        print("Failed to fetch user info");
+        print('Failed to get access token. Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
       }
     } catch (e) {
-      print("Error fetching user info: $e");
+      print('Error obtaining access token: $e');
+    }
+    return null;
+  }
+
+  // Fetch user ID from the access token (JWT)
+  Future<String?> _getUserId() async {
+    final token = widget.keycloakAccessToken.toString();
+    if (token.isEmpty) return null;
+
+    try {
+      // Decode the JWT token
+      Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+
+      // Extract the 'sub' claim, which is the user ID
+      String userId = decodedToken['sub'];
+      print("userID: $userId");
+      return userId;
+    } catch (e) {
+      print('Error decoding token: $e');
+    }
+    return null;
+  }
+
+  // Add the user to the specified subgroup
+  Future<void> _addUserToSubgroup(String subgroupId, String userId) async {
+    final token = await _getClientAccessToken();
+    if (token == null) return;
+
+    try {
+      final response = await http.put(
+        Uri.parse('$keycloakUrl/users/$userId/groups/$subgroupId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode([{'id': userId}]),
+      );
+
+      if (response.statusCode == 204) {
+        setState(() {
+          message = 'Successfully joined the subgroup!';
+          print("SubgroupId: $subgroupId");
+        });
+      } else {
+        setState(() {
+          message = 'Failed to join the subgroup. Error: ${response.body}';
+        });
+      }
+    } catch (e) {
+      print('Error adding user to subgroup: $e');
+      setState(() {
+        message = 'Error: $e';
+      });
     }
   }
 
-  // Function to fetch all groups from Keycloak
-  Future<List<String>> fetchGroups() async {
-    final response = await http.get(
-      Uri.parse('$keycloakUrl/admin/realms/$realmName/groups'),
-      headers: {
-        'Authorization': 'Bearer ${widget.keycloakAccessToken}',
-      },
-    );
+  // Future<void> _mapRoleToGroup(String groupId) async {
+  //   final token = await _getClientAccessToken();
+  //   if (token == null) return;
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return data.map((group) => group['id'].toString()).toList(); // Fetch group IDs
-    } else {
-      throw Exception('Failed to load groups');
-    }
-  }
+  //   try {
+  //     // First, retrieve the internal ID of the client
+  //     final clientResponse = await http.get(
+  //       Uri.parse('$keycloakUrl/clients?clientId=$clientId'),
+  //       headers: {
+  //         'Authorization': 'Bearer $token',
+  //       },
+  //     );
 
-  // Function to add user to the group in Keycloak
-  Future<void> addUserToGroup(String groupId) async {
-    final response = await http.post(
-      Uri.parse('$keycloakUrl/admin/realms/$realmName/users/$user_id/groups/$groupId'),
-      headers: {
-        'Authorization': 'Bearer ${widget.keycloakAccessToken}',
-      },
-    );
+  //     if (clientResponse.statusCode == 200) {
+  //       final clients = jsonDecode(clientResponse.body) as List<dynamic>;
+  //       if (clients.isEmpty) {
+  //         print('Client not found.');
+  //         return;
+  //       }
 
-    if (response.statusCode == 204) {
-      // Successfully added to group
-      print('User added to group');
-    } else {
-      throw Exception('Failed to add user to group');
-    }
-  }
+  //       final clientInternalId = clients[0]['id'];
 
-  @override
-  void initState() {
-    super.initState();
-    fetchUserInfo(); // Fetch the user info when the page is initialized
-  }
+  //       // Now, fetch the client role using the internal ID
+  //       final roleResponse = await http.get(
+  //         Uri.parse('$keycloakUrl/clients/$clientInternalId/roles/$clientRole'),
+  //         headers: {
+  //           'Authorization': 'Bearer $token',
+  //         },
+  //       );
+
+  //       if (roleResponse.statusCode == 200) {
+  //         final role = jsonDecode(roleResponse.body);
+  //         final response = await http.post(
+  //           Uri.parse(
+  //               '$keycloakUrl/groups/$groupId/role-mappings/clients/$clientInternalId'),
+  //           headers: {
+  //             'Authorization': 'Bearer $token',
+  //             'Content-Type': 'application/json',
+  //           },
+  //           body: jsonEncode([role]),
+  //         );
+
+  //         if (response.statusCode == 204) {
+  //           print('Role mapped successfully');
+  //         } else {
+  //           print('Failed to map role. Status code: ${response.statusCode}');
+  //           print('Response body: ${response.body}');
+  //         }
+  //       } else {
+  //         print(
+  //             'Failed to retrieve client role. Status code: ${roleResponse.statusCode}');
+  //         print('Response body: ${roleResponse.body}');
+  //       }
+  //     } else {
+  //       print(
+  //           'Failed to retrieve client information. Status code: ${clientResponse.statusCode}');
+  //       print('Response body: ${clientResponse.body}');
+  //     }
+  //   } catch (e) {
+  //     print('Error mapping role to group: $e');
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Join Company')),
+      appBar: AppBar(title: Text('Join Subgroup')),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Form(
@@ -103,19 +177,14 @@ class _JoinCompanyPageState extends State<JoinCompanyPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (errorMessage != null)
-                Text(
-                  errorMessage!,
-                  style: TextStyle(color: Colors.red),
-                ),
               TextFormField(
-                decoration: InputDecoration(labelText: 'Company Code'),
+                decoration: InputDecoration(labelText: 'Subgroup ID'),
                 onSaved: (value) {
-                  companyCode = value!;
+                  subgroupId = value!;
                 },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter the company code';
+                    return 'Please enter a subgroup ID';
                   }
                   return null;
                 },
@@ -125,34 +194,23 @@ class _JoinCompanyPageState extends State<JoinCompanyPage> {
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
-                    try {
-                      // Fetch groups from Keycloak
-                      List<String> groups = await fetchGroups();
-                      if (groups.contains(companyCode)) {
-                        // If the company code matches a group ID, add user to the group
-                        if (user_id != null) {
-                          await addUserToGroup(companyCode);
-                          // Navigate back to the Home page after joining
-                          Navigator.pop(context);
-                        } else {
-                          setState(() {
-                            errorMessage = 'User ID is not available.';
-                          });
-                        }
-                      } else {
-                        // Show error message if the company code is invalid
-                        setState(() {
-                          errorMessage = 'Invalid company code';
-                        });
-                      }
-                    } catch (e) {
+
+                    String? userId = await _getUserId();
+                    if (userId != null) {
+                      await _addUserToSubgroup(subgroupId, userId);
+                    } else {
                       setState(() {
-                        errorMessage = 'An error occurred: $e';
+                        message = 'Failed to retrieve user ID';
                       });
                     }
                   }
                 },
-                child: Text('Join Company'),
+                child: Text('Join Subgroup'),
+              ),
+              SizedBox(height: 20),
+              Text(
+                message,
+                style: TextStyle(color: message.contains('Successfully') ? Colors.green : Colors.red),
               ),
             ],
           ),

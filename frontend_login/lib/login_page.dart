@@ -299,15 +299,18 @@ class _LoginPageState extends State<LoginPage> {
   // Check if the Keycloak token exists in localStorage and redirect if it does
   Future<void> _checkForKeycloakToken() async {
     var keycloakAccessToken = html.window.localStorage['keycloakAccessToken'];
-    if (keycloakAccessToken != null) {
+    var googleAccessToken = html.window.localStorage['googleAccessToken'];
+    var keycloakRefreshToken = html.window.localStorage['keycloakRefreshToken'];
+    var keycloakemail = html.window.localStorage['email'];
+    if (keycloakAccessToken != null && keycloakemail != null) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => HomePage(
             keycloakAccessToken: keycloakAccessToken,
-            googleAccessToken: '',
-            keycloakRefreshToken: '',
-            email: '', // Optionally fetch user data
+            googleAccessToken: googleAccessToken.toString(),
+            keycloakRefreshToken: keycloakRefreshToken.toString(),
+            email: keycloakemail, // Optionally fetch user data
           ),
         ),
       );
