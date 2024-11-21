@@ -6,21 +6,16 @@
 </head>
 <body>
   <script>
-    // Extract the token from the URL fragment
-    const hash = window.location.hash;
-    const params = new URLSearchParams(hash.substring(1));
-
-    if (params.has('access_token')) {
-      // Store the Google access token in localStorage
-      const googleAccessToken = params.get('access_token');
-      window.localStorage.setItem('googleAccessToken', googleAccessToken);
-      
-      // Close the popup window and redirect back to the main app
-      window.close();
-      window.location.href = '/'; // This will redirect the main page to home page
+    // Extract the access token from the URL fragment
+    const hashParams = new URLSearchParams(window.location.hash.substr(1));
+    const accessToken = hashParams.get('access_token');
+  
+    if (accessToken) {
+      // Send the token to the opener window
+      window.opener.postMessage({ googleAccessToken: accessToken }, '*');
+      window.close(); // Close the popup
     } else {
-      console.error("Access token not found in URL");
-      window.location.href = '/login';
+      console.error('No access token found.');
     }
   </script>
 </body>
