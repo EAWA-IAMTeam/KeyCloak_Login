@@ -29,9 +29,13 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   async: ^2.11.0
+  crypto: ^3.0.6
   cupertino_icons: ^1.0.8
+  dio: ^5.7.0
+  encrypt: ^5.0.3
   flutter:
     sdk: flutter
+  flutter_secure_storage: ^9.2.2
   google_sign_in: ^6.2.2
   google_sign_in_web: ^0.12.4+3
   html: ^0.15.5

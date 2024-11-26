@@ -18,6 +18,10 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
   final _formKey = GlobalKey<FormState>();
   String companyName = '';
   String companyEmail = '';
+  String? selectedGroup;
+  List<String> adminGroups = []; // Cache for admin groups
+  // List to store parent group names
+  List<String> parentGroupNames = [];
 
   final String keycloakUrl = '${Config.server}:8080/admin/realms/G-SSO-Connect';
   final String clientId = 'frontend-login';
@@ -43,6 +47,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        //print(data['access_token']);
         return data['access_token'];
       } else {
         print(
@@ -71,7 +76,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
           final groups = jsonDecode(response.body) as List<dynamic>;
           for (var group in groups) {
             if (group['name'] == groupName) return group['id'];
-            print("Get Groupid: " + group['id']);
+            print("Get Groupid: " + group['name'] + group['id']);
           }
         } else {
           print(
@@ -373,6 +378,90 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
     }
   }
 
+// Fetch admin groups
+  Future<void> _getAdminGroups() async {
+    final token = await _getClientAccessToken();
+    if (token == null) return;
+
+    final userId = await _getUserId();
+    if (userId == null) return;
+
+    try {
+      final userGroupsResponse = await http.get(
+        Uri.parse('$keycloakUrl/users/$userId/groups'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      print(userGroupsResponse.statusCode);
+      if (userGroupsResponse.statusCode == 200) {
+        print(userGroupsResponse.body);
+        final userGroups = jsonDecode(userGroupsResponse.body) as List<dynamic>;
+        List<String> fetchedParentIds = []; // List to store parent IDs
+
+        for (var group in userGroups) {
+          if (group['name'] == 'Admin' && group['parentId'] != null) {
+            fetchedParentIds.add(group['parentId']);
+            print("GetAdminGroups (ParentId): " + fetchedParentIds.last);
+          }
+        }
+
+        // Fetch parent group names and update the state
+        await _getParentGroupNames(fetchedParentIds);
+
+        // Sort group names alphabetically before updating state
+        parentGroupNames
+            .sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+        setState(() {
+          adminGroups = parentGroupNames;
+          selectedGroup = adminGroups.isNotEmpty ? adminGroups[0] : null;
+        });
+      } else {
+        print(
+            'Failed to fetch user groups. Status: ${userGroupsResponse.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching admin groups: $e');
+    }
+  }
+
+// Fetch parent group names using the fetched parent IDs
+  Future<void> _getParentGroupNames(List<String> parentIds) async {
+    final token = await _getClientAccessToken();
+    if (token == null) return;
+
+    List<String> fetchedNames = [];
+    try {
+      for (var parentId in parentIds) {
+        final groupResponse = await http.get(
+          Uri.parse('$keycloakUrl/groups/$parentId'),
+          headers: {'Authorization': 'Bearer $token'},
+        );
+        print(groupResponse.statusCode);
+        if (groupResponse.statusCode == 200) {
+          final group = jsonDecode(groupResponse.body);
+          if (group['name'] != null) {
+            fetchedNames.add(group['name']);
+            print("GetParentGroupNames (Group Name): " + group['name']);
+          }
+        } else {
+          print(
+              'Failed to fetch group name for parentId: $parentId. Status: ${groupResponse.statusCode}');
+        }
+      }
+
+      // Update the parent group names list
+      parentGroupNames = fetchedNames;
+    } catch (e) {
+      print('Error fetching parent group names: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _getAdminGroups();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -425,8 +514,8 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
                         MaterialPageRoute(
                           builder: (context) => InviteUserPage(
                             keycloakAccessToken: widget.keycloakAccessToken,
-                            groupId:
-                                groupId.toString(), // Pass the group ID to the InviteUserPage
+                            groupId: groupId
+                                .toString(), // Pass the group ID to the InviteUserPage
                           ),
                         ),
                       );
@@ -438,6 +527,55 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
                   }
                 },
                 child: Text('Create Company'),
+              ),
+              DropdownButton<String>(
+                value: selectedGroup,
+                items: adminGroups
+                    .map((group) => DropdownMenuItem<String>(
+                          value: group,
+                          child: Text(group),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedGroup = value;
+                  });
+                },
+                hint: Text('Select Parent Group'),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  if (selectedGroup != null) {
+                    print('Selected Group: $selectedGroup');
+
+                    try {
+                      // Await the group ID resolution
+                      final groupId = await _getGroupId(selectedGroup!);
+
+                      if (groupId != null) {
+                        print('Resolved Group ID: $groupId');
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => InviteUserPage(
+                              groupId: groupId,
+                              keycloakAccessToken: widget.keycloakAccessToken,
+                            ),
+                          ),
+                        );
+                      } else {
+                        print('Group ID could not be resolved');
+                      }
+                    } catch (e) {
+                      print('Error resolving group ID: $e');
+                    }
+                  } else {
+                    print('No group selected');
+                  }
+                },
+                child: Text('Invite User'),
               ),
             ],
           ),
