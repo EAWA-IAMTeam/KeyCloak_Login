@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:frontend_login/config.dart';
-import 'package:frontend_login/invite_user.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 class CreateCompanyPage extends StatefulWidget {
@@ -18,10 +18,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
   final _formKey = GlobalKey<FormState>();
   String companyName = '';
   String companyEmail = '';
-  String? selectedGroup;
-  List<String> adminGroups = []; // Cache for admin groups
-  // List to store parent group names
-  List<String> parentGroupNames = [];
+  List<String> existingGroups = []; // List to store existing group names
 
   final String keycloakUrl = '${Config.server}:8080/admin/realms/G-SSO-Connect';
   final String clientId = 'frontend-login';
@@ -136,36 +133,6 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
     return null;
   }
 
-  // Future<void> createSubgroupAndAssignRole(String groupId) async {
-  //   final token = await _getClientAccessToken();
-  //   if (token == null) return;
-
-  //   try {
-  //     final subgroupId = await _getGroupId('Admin', parentGroupId: groupId);
-  //     if (subgroupId == null) {
-  //       final response = await http.post(
-  //         Uri.parse('$keycloakUrl/groups/$groupId/children'),
-  //         headers: {
-  //           'Authorization': 'Bearer $token',
-  //           'Content-Type': 'application/json',
-  //         },
-  //         body: jsonEncode({'name': 'Admin'}),
-  //       );
-
-  //       if (response.statusCode == 201) {
-  //         print('Admin subgroup created successfully');
-  //       } else {
-  //         print('Failed to create Admin subgroup. Status code: ${response.statusCode}');
-  //         print('Response body: ${response.body}');
-  //       }
-  //     }
-
-  //     await _mapRoleToGroup(groupId);
-  //   } catch (e) {
-  //     print('Error creating subgroup or assigning role: $e');
-  //   }
-  // }
-
   Future<void> createSubgroupAndAssignRole(String groupId) async {
     final token = await _getClientAccessToken();
     if (token == null) return;
@@ -227,46 +194,6 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
     }
   }
 
-//     // Map the role to the group
-//     await _mapRoleToGroup(groupId);
-
-//     // After subgroup creation, add the user to the Admin subgroup
-//     final userId = await _getUserId();  // You need to implement the logic to retrieve the user ID
-//     if (userId != null) {
-//       await _addUserToSubgroup(subgroupId!, userId);  // Add user to subgroup
-//     }
-
-//   } catch (e) {
-//     print('Error creating subgroup or assigning role: $e');
-//   }
-// }
-
-// // Fetch the user ID (e.g., using the Keycloak userinfo endpoint)
-// Future<String?> _getUserId() async {
-//   // final token = await _getClientAccessToken();
-//   // if (token == null) return null;
-
-//   try {
-//     final response = await http.get(
-//       Uri.parse('${Config.server}:8080/realms/G-SSO-Connect/protocol/openid-connect/userinfo'),
-//       headers: {
-//         'Authorization': 'Bearer ${widget.keycloakAccessToken}',
-//         'Content-Type': 'application/json',
-//       },
-//     );
-
-//     if (response.statusCode == 200) {
-//       final data = jsonDecode(response.body);
-//       return data['sub'];  // Assuming 'sub' is the user ID field
-//     } else {
-//       print('Failed to fetch user info. Status code: ${response.statusCode}');
-//       print('Response body: ${response.body}');
-//     }
-//   } catch (e) {
-//     print('Error fetching user info: $e');
-//   }
-//   return null;
-// }
   Future<String?> _getUserId() async {
     final token = widget.keycloakAccessToken.toString();
     if (token == "") return null;
@@ -378,88 +305,64 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
     }
   }
 
-// Fetch admin groups
-  Future<void> _getAdminGroups() async {
+  Future<void> _showDialog(String title, String message) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// Fetch existing groups from Keycloak and store them in the list
+  Future<void> _fetchExistingGroups() async {
     final token = await _getClientAccessToken();
-    if (token == null) return;
+    if (token == null) return null;
 
-    final userId = await _getUserId();
-    if (userId == null) return;
+    final response = await http.get(
+      Uri.parse('$keycloakUrl/groups'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
 
-    try {
-      final userGroupsResponse = await http.get(
-        Uri.parse('$keycloakUrl/users/$userId/groups'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      print(userGroupsResponse.statusCode);
-      if (userGroupsResponse.statusCode == 200) {
-        print(userGroupsResponse.body);
-        final userGroups = jsonDecode(userGroupsResponse.body) as List<dynamic>;
-        List<String> fetchedParentIds = []; // List to store parent IDs
-
-        for (var group in userGroups) {
-          if (group['name'] == 'Admin' && group['parentId'] != null) {
-            fetchedParentIds.add(group['parentId']);
-            print("GetAdminGroups (ParentId): " + fetchedParentIds.last);
-          }
-        }
-
-        // Fetch parent group names and update the state
-        await _getParentGroupNames(fetchedParentIds);
-
-        // Sort group names alphabetically before updating state
-        parentGroupNames
-            .sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-
-        setState(() {
-          adminGroups = parentGroupNames;
-          selectedGroup = adminGroups.isNotEmpty ? adminGroups[0] : null;
-        });
-      } else {
-        print(
-            'Failed to fetch user groups. Status: ${userGroupsResponse.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching admin groups: $e');
+    if (response.statusCode == 200) {
+      final List<dynamic> groups = json.decode(response.body);
+      setState(() {
+        existingGroups =
+            groups.map((group) => group['name'].toString()).toList();
+      });
+    } else {
+      // Handle error (e.g., Keycloak server is down or invalid response)
+      print("Failed to fetch groups from Keycloak");
     }
   }
 
-// Fetch parent group names using the fetched parent IDs
-  Future<void> _getParentGroupNames(List<String> parentIds) async {
-    final token = await _getClientAccessToken();
-    if (token == null) return;
-
-    List<String> fetchedNames = [];
-    try {
-      for (var parentId in parentIds) {
-        final groupResponse = await http.get(
-          Uri.parse('$keycloakUrl/groups/$parentId'),
-          headers: {'Authorization': 'Bearer $token'},
-        );
-        print(groupResponse.statusCode);
-        if (groupResponse.statusCode == 200) {
-          final group = jsonDecode(groupResponse.body);
-          if (group['name'] != null) {
-            fetchedNames.add(group['name']);
-            print("GetParentGroupNames (Group Name): " + group['name']);
-          }
-        } else {
-          print(
-              'Failed to fetch group name for parentId: $parentId. Status: ${groupResponse.statusCode}');
-        }
-      }
-
-      // Update the parent group names list
-      parentGroupNames = fetchedNames;
-    } catch (e) {
-      print('Error fetching parent group names: $e');
+  // Validator to check if the company already exists in the existing groups list
+  String? _validateCompanyName(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a company name';
     }
+    if (existingGroups.contains(value)) {
+      return 'Company Exists'; // If company exists, return error
+    }
+    return null;
   }
 
   @override
   void initState() {
     super.initState();
-    _getAdminGroups();
+    _fetchExistingGroups();
   }
 
   @override
@@ -478,12 +381,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
                 onSaved: (value) {
                   companyName = value!;
                 },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a company name';
-                  }
-                  return null;
-                },
+                validator: _validateCompanyName, // Use the local validator
               ),
               TextFormField(
                 decoration: InputDecoration(labelText: 'Company Email'),
@@ -509,73 +407,20 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
                     if (groupId != null) {
                       print("main ui get company group id" + groupId);
                       await createSubgroupAndAssignRole(groupId);
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => InviteUserPage(
-                            keycloakAccessToken: widget.keycloakAccessToken,
-                            groupId: groupId
-                                .toString(), // Pass the group ID to the InviteUserPage
-                          ),
-                        ),
-                      );
+                      String username = JwtDecoder.decode(
+                          widget.keycloakAccessToken)['preferred_username'];
+                      String formattedTime =
+                          DateFormat('dd/MM/yy hh:mm a').format(DateTime.now());
+                      String successMessage =
+                          'Company "$companyName" created successfully.\nUsername: $username\nTime Created: $formattedTime\n\nRedirecting you to the homepage.';
+                      _showDialog('Success', successMessage);
+                      //Navigator.pop(context); // Close the page
                     } else {
                       print('Group ID is null. Group creation failed.');
                     }
-
-                    Navigator.pop(context);
                   }
                 },
                 child: Text('Create Company'),
-              ),
-              DropdownButton<String>(
-                value: selectedGroup,
-                items: adminGroups
-                    .map((group) => DropdownMenuItem<String>(
-                          value: group,
-                          child: Text(group),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedGroup = value;
-                  });
-                },
-                hint: Text('Select Parent Group'),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  if (selectedGroup != null) {
-                    print('Selected Group: $selectedGroup');
-
-                    try {
-                      // Await the group ID resolution
-                      final groupId = await _getGroupId(selectedGroup!);
-
-                      if (groupId != null) {
-                        print('Resolved Group ID: $groupId');
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => InviteUserPage(
-                              groupId: groupId,
-                              keycloakAccessToken: widget.keycloakAccessToken,
-                            ),
-                          ),
-                        );
-                      } else {
-                        print('Group ID could not be resolved');
-                      }
-                    } catch (e) {
-                      print('Error resolving group ID: $e');
-                    }
-                  } else {
-                    print('No group selected');
-                  }
-                },
-                child: Text('Invite User'),
               ),
             ],
           ),
