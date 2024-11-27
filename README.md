@@ -3,7 +3,7 @@
 
         fvm flutter run -d chrome --web-port=3001
 
-    Frontend-login is for testing purpose.
+    Frontend-login is for testing purpose.<br><br>
 
 2. Progress<br>
     i.   Sign in using GOOGLE SIGN-IN (store data in storage if not signed out)<br>
@@ -12,8 +12,7 @@
     iv.  Create Company (Automatically create admin subgroup, add member and role mapping)<br>
     v.   Select Company (Select Company to view the data of the company and invite users)<br>
     vi.  Invite User (Invite User using encrypted plaintext containing groupid, subgroupid and expiration time) <br>
-    vii. Join Company (Join Company using the invitation code and join relevant subgroup)
-
+    vii. Join Company (Join Company using the invitation code and join relevant subgroup)<br><br><br>
 
 //TODO:<br>
 //Pop-up to show details once joined.<br>
