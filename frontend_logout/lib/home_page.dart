@@ -196,11 +196,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Home')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+ Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(title: Text('Home')),
+    body: Padding(
+      padding: const EdgeInsets.all(20),
+      child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -282,15 +283,6 @@ class _HomePageState extends State<HomePage> {
                             },
                             child: Text('Join Company'),
                           ),
-                        ],
-                      ),
-
-                      SizedBox(height: 20),
-
-                      // Second Row with Connect with APISIX and Logout
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
                           ElevatedButton(
                             onPressed: () {
                               _callApiWithToken();
@@ -299,6 +291,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
+                      // Second Row Logout
                       SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -330,6 +323,8 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 }

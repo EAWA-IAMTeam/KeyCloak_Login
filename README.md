@@ -15,8 +15,9 @@
     vii. Join Company (Join Company using the invitation code and join relevant subgroup)<br><br><br>
 
 //TODO:<br>
-//shorten invitation code<br>
+//shorten invitation code - could not find shortener for code, only url<br>
+    flutter_url_shortener <br>
 //generate new invitation code or use the original before expiration time ? store in storage or cache<br>
 //role mapping for admin only, will implement for other roles later<br>
 //Remove Admin join company option assuming that he is owner <br>
-//limit or threshold of groups and subgroups not tested sucessfully.
+//limit or threshold of groups and subgroups not tested yet.
