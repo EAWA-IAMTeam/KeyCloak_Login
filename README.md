@@ -15,7 +15,6 @@
     vii. Join Company (Join Company using the invitation code and join relevant subgroup)<br><br><br>
 
 //TODO:<br>
-//Pop-up to show details once joined.<br>
 //extract select company into a new class<br>
 //shorten invitation code<br>
 //generate new invitation code or use the original before expiration time ? store in storage or cache<br>
