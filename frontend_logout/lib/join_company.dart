@@ -265,7 +265,8 @@ class _JoinCompanyPageState extends State<JoinCompanyPage> {
         final data = json.decode(response.body);
         return data['access_token'];
       } else {
-        print('Failed to get access token. Status code: ${response.statusCode}');
+        print(
+            'Failed to get access token. Status code: ${response.statusCode}');
       }
     } catch (e) {
       print('Error obtaining access token: $e');
@@ -273,29 +274,39 @@ class _JoinCompanyPageState extends State<JoinCompanyPage> {
     return null;
   }
 
-String? _decryptInvitationCode(String encryptedCode, String aesKey) {
-  try {
-    print('Decrypting invitation code: $encryptedCode');
-    
-    final key = encrypt.Key.fromUtf8(aesKey);
-    final iv = encrypt.IV.fromLength(16); // Ensure the same IV length as used during encryption
-    final encrypter = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc));
+  String? _decryptInvitationCode(
+      String encryptedCode, String aesKey, String ivBase64) {
+    try {
+      // Convert the AES key and IV from their Base64/UTF-8 representations
+      final key = encrypt.Key.fromUtf8(aesKey); // AES key
+      final iv = encrypt.IV.fromBase64(
+          ivBase64); // Fixed IV (must match the one used during encryption)
 
-    // Ensure the encrypted code is decoded properly from base64
-    final decrypted = encrypter.decrypt64(encryptedCode, iv: iv);
-    
-    print('Decrypted invitation code: $decrypted');
-    
-    return decrypted;
-  } catch (e) {
-    print('Error decrypting invitation code: $e');
+      // Create the encrypter object with AES CBC mode
+      final encrypter =
+          encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc));
+
+      // Convert the encrypted code from Base64 to the Encrypted object
+      final encrypted = encrypt.Encrypted.fromBase64(encryptedCode);
+
+      // Decrypt the data and handle it as raw bytes
+      final decryptedBytes = encrypter.decryptBytes(encrypted, iv: iv);
+
+      // Try converting the decrypted bytes to a UTF-8 string (handling malformed data)
+      final decryptedString = utf8.decode(decryptedBytes, allowMalformed: true);
+
+      print('Decrypted invitation code: $decryptedString');
+
+      return decryptedString;
+    } catch (e) {
+      print('Error decrypting invitation code: $e');
+    }
+    return null;
   }
-  return null;
-}
-
 
   Future<void> _joinGroup(String groupId, String? subgroupId) async {
-    final token = widget.keycloakAccessToken;
+    final token = await _getClientAccessToken();
+    if (token == null) return null;
 
     try {
       final userId = await _getUserId();
@@ -303,8 +314,13 @@ String? _decryptInvitationCode(String encryptedCode, String aesKey) {
         print('Failed to fetch user ID.');
         return;
       }
+      print('Parent Id: ' + groupId);
+      print('Subgroup Id: ' + subgroupId.toString());
 
       final targetGroupId = subgroupId ?? groupId;
+      print("targetGroupId: " + targetGroupId);
+      print("userid: " + userId.toString());
+
       final response = await http.put(
         Uri.parse('$keycloakUrl/users/$userId/groups/$targetGroupId'),
         headers: {
@@ -347,7 +363,8 @@ String? _decryptInvitationCode(String encryptedCode, String aesKey) {
 
   Future<void> _processInvitationCode(String invitationCode) async {
     const aesKey = 'mysecretaeskey23'; // Replace with your actual AES key
-    final decryptedData = _decryptInvitationCode(invitationCode, aesKey);
+    const IV = 'T6fuCu/7ZdQeIwj8ziM6JA==';
+    final decryptedData = _decryptInvitationCode(invitationCode, aesKey, IV);
 
     if (decryptedData == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -356,7 +373,15 @@ String? _decryptInvitationCode(String encryptedCode, String aesKey) {
       return;
     }
 
-    final parts = decryptedData.split('|');
+    print('Decrypted invitation code: $decryptedData'); // Debugging output
+
+    // Remove the labels (groupId:, subgroupId:, expiration:) from the decrypted data
+    final cleanedData = decryptedData
+        .replaceFirst('groupId:', '')
+        .replaceFirst('subgroupId:', '')
+        .replaceFirst('expiration:', '');
+
+    final parts = cleanedData.split('|');
     if (parts.length != 3) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Invalid invitation code format.')),
@@ -366,9 +391,24 @@ String? _decryptInvitationCode(String encryptedCode, String aesKey) {
 
     final groupId = parts[0];
     final subgroupId = parts[1];
-    final expirationTime = DateTime.tryParse(parts[2]);
+    final expirationTimeStr = parts[2];
 
-    if (expirationTime == null || expirationTime.isBefore(DateTime.now())) {
+    print('Expiration time string: $expirationTimeStr'); // Debugging output
+
+    DateTime? expirationTime;
+
+    try {
+      // Manually parse expiration time string in case milliseconds are causing issues
+      expirationTime = DateTime.parse(expirationTimeStr);
+    } catch (e) {
+      print('Error parsing expiration time: $e');
+    }
+
+    print('Decrypted expiration time: $expirationTime');
+    print('Current time: ${DateTime.now().toUtc()}'); // For debugging
+
+    if (expirationTime == null ||
+        expirationTime.isBefore(DateTime.now().toUtc())) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Invitation code has expired.')),
       );

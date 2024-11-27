@@ -266,7 +266,9 @@ String encryptInvitationCode(String groupId, String subgroupId) {
   print('Encrypting invitation code: $plainText');
 
   final key = encrypt.Key.fromUtf8(encryptionKey);
-  final iv = encrypt.IV.fromLength(16);
+  final iv = encrypt.IV.fromBase64('T6fuCu/7ZdQeIwj8ziM6JA==');
+  // final iv = encrypt.IV.fromLength(16);
+  //  print('Initialization Vector (IV): ${iv.base64}'); // Print as base64
   final encrypter = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc));
   final encrypted = encrypter.encrypt(plainText, iv: iv);
 
@@ -324,7 +326,7 @@ String encryptInvitationCode(String groupId, String subgroupId) {
               },
               child: Text('Copy to Clipboard'),
             ),
-            Text(widget.groupId),
+            //Text(widget.groupId),
           ],
         ),
       ),
