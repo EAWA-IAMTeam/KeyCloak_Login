@@ -131,6 +131,7 @@ import 'package:crypto/crypto.dart'; // Add this dependency
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For clipboard functionality
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:frontend_login/config.dart';
@@ -259,23 +260,45 @@ void _handleRoleSelection(String role) async {
   }
 }
 
+// String encryptInvitationCode(String groupId, String subgroupId) {
+//   final expirationTime = DateTime.now().toUtc().add(Duration(hours: 24)).toIso8601String();
+//   final plainText = 'groupId:$groupId|subgroupId:$subgroupId|expiration:$expirationTime';
+
+//   print('Encrypting invitation code: $plainText');
+
+//   final key = encrypt.Key.fromUtf8(encryptionKey);
+//   final iv = encrypt.IV.fromBase64('T6fuCu/7ZdQeIwj8ziM6JA==');
+//   final encrypter = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc));
+//   final encrypted = encrypter.encrypt(plainText, iv: iv);
+
+//   print('Encrypted invitation code: ${encrypted.base64}');
+
+//   // Return encrypted text as base64 string
+//   return encrypted.base64;
+// }
+
 String encryptInvitationCode(String groupId, String subgroupId) {
-  final expirationTime = DateTime.now().toUtc().add(Duration(hours: 24)).toIso8601String();
-  final plainText = 'groupId:$groupId|subgroupId:$subgroupId|expiration:$expirationTime';
+  // Load AES Key and IV from the .env file
+  final aesKey = dotenv.env['AES_KEY']!;
+  final aesIv = dotenv.env['AES_IV']!;
+
+  final expirationTime =
+      DateTime.now().toUtc().add(Duration(hours: 24)).toIso8601String();
+  final plainText =
+      'groupId:$groupId|subgroupId:$subgroupId|expiration:$expirationTime';
 
   print('Encrypting invitation code: $plainText');
 
-  final key = encrypt.Key.fromUtf8(encryptionKey);
-  final iv = encrypt.IV.fromBase64('T6fuCu/7ZdQeIwj8ziM6JA==');
+  final key = encrypt.Key.fromBase64(aesKey);
+  final iv = encrypt.IV.fromBase64(aesIv);
   final encrypter = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc));
+
   final encrypted = encrypter.encrypt(plainText, iv: iv);
 
   print('Encrypted invitation code: ${encrypted.base64}');
 
-  // Return encrypted text as base64 string
-  return encrypted.base64;
+  return encrypted.base64; // Return encrypted text as base64 string
 }
-
 
   @override
   void initState() {

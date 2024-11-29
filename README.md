@@ -12,12 +12,13 @@
     iv.  Create Company (Automatically create admin subgroup, add member and role mapping)<br>
     v.   Select Company (Select Company to view the data of the company)<br>
     vi.  Invite User (Invite User using encrypted plaintext containing groupid, subgroupid and expiration time) <br>
-    vii. Join Company (Join Company using the invitation code and join relevant subgroup)<br><br><br>
+    vii. Join Company (Join Company using the invitation code and join relevant subgroup)<br>
+    viii.Keys stored in environment file rather than hardcoded<br>
+    ix.  Code lengths: 192<br><br><br>
 
 //TODO:<br>
 //shorten invitation code - could not find shortener for code, only url<br>
     flutter_url_shortener <br>
-//generate new invitation code or use the original before expiration time ? store in storage or cache<br>
 //role mapping for admin only, will implement for other roles later<br>
 //Remove Admin join company option assuming that he is owner <br>
-//limit or threshold of groups and subgroups not tested yet.
+

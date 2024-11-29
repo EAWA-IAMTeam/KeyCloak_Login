@@ -236,6 +236,7 @@
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend_login/config.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -287,29 +288,56 @@ class _JoinCompanyPageState extends State<JoinCompanyPage> {
     return null;
   }
 
-  String? _decryptInvitationCode(
-      String encryptedCode, String aesKey, String ivBase64) {
-    try {
-      final key = encrypt.Key.fromUtf8(aesKey);
-      final iv = encrypt.IV.fromBase64(ivBase64);
+  // String? _decryptInvitationCode(
+  //     String encryptedCode, String aesKey, String ivBase64) {
+  //   try {
+  //     final key = encrypt.Key.fromUtf8(aesKey);
+  //     final iv = encrypt.IV.fromBase64(ivBase64);
 
-      final encrypter =
-          encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc));
+  //     final encrypter =
+  //         encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc));
 
-      final encrypted = encrypt.Encrypted.fromBase64(encryptedCode);
+  //     final encrypted = encrypt.Encrypted.fromBase64(encryptedCode);
 
-      final decryptedBytes = encrypter.decryptBytes(encrypted, iv: iv);
+  //     final decryptedBytes = encrypter.decryptBytes(encrypted, iv: iv);
 
-      final decryptedString = utf8.decode(decryptedBytes, allowMalformed: true);
+  //     final decryptedString = utf8.decode(decryptedBytes, allowMalformed: true);
 
-      print('Decrypted invitation code: $decryptedString');
+  //     print('Decrypted invitation code: $decryptedString');
 
-      return decryptedString;
-    } catch (e) {
-      print('Error decrypting invitation code: $e');
-    }
+  //     return decryptedString;
+  //   } catch (e) {
+  //     print('Error decrypting invitation code: $e');
+  //   }
+  //   return null;
+  // }
+
+
+String? decryptInvitationCode(String encryptedCode) {
+  try {
+    // Load AES Key and IV from the .env file
+    final aesKey = dotenv.env['AES_KEY']!;
+    final aesIv = dotenv.env['AES_IV']!;
+
+    final key = encrypt.Key.fromBase64(aesKey);
+    final iv = encrypt.IV.fromBase64(aesIv);
+
+    final encrypter = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc));
+
+    final encrypted = encrypt.Encrypted.fromBase64(encryptedCode);
+    final decryptedBytes = encrypter.decryptBytes(encrypted, iv: iv);
+
+    final decryptedString = utf8.decode(decryptedBytes, allowMalformed: true);
+
+    print('Decrypted invitation code: $decryptedString');
+
+    return decryptedString;
+  } catch (e) {
+    print('Error decrypting invitation code: $e');
     return null;
   }
+}
+
 
   Future<bool> _isUserInGroup(String userId, String groupId) async {
   final token = await _getClientAccessToken();
@@ -497,9 +525,7 @@ Future<void> _joinGroup(String groupId, String? subgroupId) async {
   }
 
   Future<void> _processInvitationCode(String invitationCode) async {
-  const aesKey = 'mysecretaeskey23'; // Replace with your actual AES key
-  const IV = 'T6fuCu/7ZdQeIwj8ziM6JA==';
-  final decryptedData = _decryptInvitationCode(invitationCode, aesKey, IV);
+  final decryptedData = decryptInvitationCode(invitationCode);
 
   if (decryptedData == null) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -577,6 +603,7 @@ Future<void> _joinGroup(String groupId, String? subgroupId) async {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
+                  print("Code Length: ${_invitationCodeController.text.length}");
                   if (_formKey.currentState!.validate()) {
                     _processInvitationCode(_invitationCodeController.text);
                   }

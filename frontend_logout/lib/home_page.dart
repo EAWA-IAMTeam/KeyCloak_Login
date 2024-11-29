@@ -196,135 +196,137 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
- Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(title: Text('Home')),
-    body: Padding(
-      padding: const EdgeInsets.all(20),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            widget.keycloakAccessToken.isNotEmpty
-                ? Column(
-                    children: [
-                      Text('Email: ${widget.email}'),
-                      SizedBox(height: 10),
-                      Text(
-                          'Keycloak Access Token: ${widget.keycloakAccessToken}'),
-                      SizedBox(height: 10),
-                      Text(
-                          'Keycloak Refresh Token: ${widget.keycloakRefreshToken}'),
-                      SizedBox(height: 20),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Home')),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              widget.keycloakAccessToken.isNotEmpty
+                  ? Column(
+                      children: [
+                        Text('Email: ${widget.email}'),
+                        SizedBox(height: 10),
+                        Text(
+                            'Keycloak Access Token: ${widget.keycloakAccessToken}'),
+                        SizedBox(height: 10),
+                        Text(
+                            'Keycloak Refresh Token: ${widget.keycloakRefreshToken}'),
+                        SizedBox(height: 20),
 
-                      // First Row with Select Company, Create Company, and Join Company
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SelectCompanyPage(
-                                    keycloakAccessToken:
-                                        widget.keycloakAccessToken,
+                        // First Row with Select Company, Create Company, and Join Company
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SelectCompanyPage(
+                                      keycloakAccessToken:
+                                          widget.keycloakAccessToken,
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                            child: Text('Select Company'),
-                          ),
-                          SizedBox(width: 10),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      SelectCompanyforuserPage(
-                                    keycloakAccessToken:
-                                        widget.keycloakAccessToken,
+                                );
+                              },
+                              child: Text('Select Company'),
+                            ),
+                            SizedBox(width: 10),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        SelectCompanyforuserPage(
+                                      keycloakAccessToken:
+                                          widget.keycloakAccessToken,
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                            child: Text('Invite User'),
-                          ),
-                          SizedBox(
-                              width: 10), // Add some space between the buttons
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CreateCompanyPage(
-                                    keycloakAccessToken:
-                                        widget.keycloakAccessToken,
+                                );
+                              },
+                              child: Text('Invite User'),
+                            ),
+                            SizedBox(
+                                width:
+                                    10), // Add some space between the buttons
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CreateCompanyPage(
+                                      keycloakAccessToken:
+                                          widget.keycloakAccessToken,
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                            child: Text('Create Company'),
-                          ),
-                          SizedBox(
-                              width: 10), // Add some space between the buttons
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => JoinCompanyPage(
-                                    keycloakAccessToken:
-                                        widget.keycloakAccessToken,
+                                );
+                              },
+                              child: Text('Create Company'),
+                            ),
+                            SizedBox(
+                                width:
+                                    10), // Add some space between the buttons
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => JoinCompanyPage(
+                                      keycloakAccessToken:
+                                          widget.keycloakAccessToken,
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                            child: Text('Join Company'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              _callApiWithToken();
-                            },
-                            child: Text('Connect with APISIX'),
-                          ),
-                        ],
-                      ),
-                      // Second Row Logout
-                      SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () => _logout(context),
-                            child: Text('Logout'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      Text('Login failed. Please try again.'),
-                      SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const LoginPage()),
-                          );
-                        },
-                        child: Text('Login'),
-                      ),
-                    ],
-                  ),
-          ],
+                                );
+                              },
+                              child: Text('Join Company'),
+                            ),
+                            SizedBox(width: 10),
+                            ElevatedButton(
+                              onPressed: () {
+                                _callApiWithToken();
+                              },
+                              child: Text('Connect with APISIX'),
+                            ),
+                          ],
+                        ),
+                        // Second Row Logout
+                        SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () => _logout(context),
+                              child: Text('Logout'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        Text('Login failed. Please try again.'),
+                        SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const LoginPage()),
+                            );
+                          },
+                          child: Text('Login'),
+                        ),
+                      ],
+                    ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }
