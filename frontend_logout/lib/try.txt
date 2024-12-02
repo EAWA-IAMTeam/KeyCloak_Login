@@ -1,0 +1,12 @@
+a1 Packer Invitation Link
+9mPBYYr4IJwBIaaMZLNyCg48D+fpigygexhsKrbq0YwKNJMr9crtbronC65k0HRzPLF0sDWibUDGPhqrS+/HUHuBvyaXkjD3GvToFJeeQXytQtek5uUvIY8dZVkTljhz64wXvVv4aBrqwpDLUTFenuRsRdvBp7mhg1w92CLJv50/rB4P5uwp0HWedG9ue72V
+
+a1 Manager Invitation Link
+HUJQch4PosJTZWpOLK+ePKvFQeO0hzTXAIVAcYaMhlduCELG9/SP5zfWvlx2D3WC+uQ3YEmZk7P8epzhU6MuPPBaP/+nBPq5v59xZ8bOt5UJAb7UdAVlGAeUa6mfW6N4k2Auqnmu+USzx4nuqTSRiA==
+
+a2 Packer Invitation Link
+SZDcvwMTTO9mNCUOuNWqxZih8CzDHWuxVJuEs+buYAGYbktBzQWdLSI40ajOOZSrlv8A86DYJECc6FN+737Xf1B0YQ2zWAoCj80058RO9RQEQC4Oja0yjXydjYS2ds3v/7lzUYJuXTfFH7zx+NbZbQ==
+
+// put keys in .env files
+// keys, iv based64 or UTF-8 encoded
+// run and test

@@ -1,9 +1,15 @@
 1. Run application
-    Please use the command below to run frontend-logout.
+    Backend: <br>
 
+        cd otp_login/invite_code_service
+        go run main.go
+           
+    Frontend:<br>
+
+        cd otp_login/invite_code_service
         fvm flutter run -d chrome --web-port=3001
 
-    Frontend-login is for testing purpose.<br><br>
+    <br><br>
 
 2. Progress<br>
     i.   Sign in using GOOGLE SIGN-IN (store data in storage if not signed out)<br>
@@ -14,7 +20,8 @@
     vi.  Invite User (Invite User using encrypted plaintext containing groupid, subgroupid and expiration time) <br>
     vii. Join Company (Join Company using the invitation code and join relevant subgroup)<br>
     viii.Keys stored in environment file rather than hardcoded<br>
-    ix.  Code lengths: 192<br><br><br>
+    ix.  Encryption and Decryption processed at backend<br>
+    x.   Code lengths: 152<br><br><br>
 
 //TODO:<br>
 //shorten invitation code - could not find shortener for code, only url<br>

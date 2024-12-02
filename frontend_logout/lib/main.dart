@@ -4,7 +4,7 @@ import 'package:frontend_login/login_page.dart';
 
 
 void main() async{
-   await dotenv.load();
+   //await dotenv.load();
    runApp(const MyApp());
 } 
 
