@@ -214,7 +214,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For clipboard functionality
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend_login/config.dart';
 
@@ -236,6 +235,9 @@ class _InviteUserPageState extends State<InviteUserPage> {
   String? _selectedRole;
   String? invitationCode;
   TextEditingController _codeController = TextEditingController();
+  final String keycloakUrl = '${Config.server}:8080/admin/realms/G-SSO-Connect';
+  final String clientId = 'frontend-login';
+  final String clientSecret = '0SSZj01TDs7812fLBxgwTKPA74ghnLQM';
 
   Future<String?> _getClientAccessToken() async {
     final tokenUrl =
@@ -322,6 +324,69 @@ class _InviteUserPageState extends State<InviteUserPage> {
     return null;
   }
 
+   Future<void> _mapRoleToSubgroup(String role, String groupId) async {
+    final token = await _getClientAccessToken();
+    if (token == null) return;
+
+    try {
+      // First, retrieve the internal ID of the client
+      final clientResponse = await http.get(
+        Uri.parse('$keycloakUrl/clients?clientId=$clientId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (clientResponse.statusCode == 200) {
+        final clients = jsonDecode(clientResponse.body) as List<dynamic>;
+        if (clients.isEmpty) {
+          print('Client not found.');
+          return;
+        }
+
+        final clientInternalId = clients[0]['id'];
+
+        // Now, fetch the client role using the internal ID
+        final roleResponse = await http.get(
+          Uri.parse('$keycloakUrl/clients/$clientInternalId/roles/$role'),
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        );
+
+        if (roleResponse.statusCode == 200) {
+          final role = jsonDecode(roleResponse.body);
+          final response = await http.post(
+            Uri.parse(
+                '$keycloakUrl/groups/$groupId/role-mappings/clients/$clientInternalId'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode([role]),
+          );
+
+          if (response.statusCode == 204) {
+            print('Role mapped successfully');
+          } else {
+            print('Failed to map role. Status code: ${response.statusCode}');
+            print('Response body: ${response.body}');
+          }
+        } else {
+          print(
+              'Failed to retrieve client role. Status code: ${roleResponse.statusCode}');
+          print('Response body: ${roleResponse.body}');
+        }
+      } else {
+        print(
+            'Failed to retrieve client information. Status code: ${clientResponse.statusCode}');
+        print('Response body: ${clientResponse.body}');
+      }
+    } catch (e) {
+      print('Error mapping role to group: $e');
+    }
+  }
+
 void _handleRoleSelection(String role) async {
   print("Selected Role: $role");
   // First, try to get the existing subgroup ID for the selected role
@@ -332,6 +397,9 @@ void _handleRoleSelection(String role) async {
   }
 
   if (subgroupId != null) {
+      print("Role: " + role + " subgroup: " + subgroupId);
+      // Now, map the role to the subgroup
+      await _mapRoleToSubgroup(role, subgroupId);
     // Encrypt the invitation code asynchronously
     String encryptedCode = await encryptInvitationCodeViaAPI(widget.groupId, subgroupId);
     setState(() {
@@ -366,6 +434,7 @@ void _handleRoleSelection(String role) async {
   void initState() {
     super.initState();
     print("group id: " + widget.groupId.toString());
+     _selectedRole = 'Admin';
   }
 
   @override
@@ -379,15 +448,16 @@ void _handleRoleSelection(String role) async {
           children: [
             DropdownButton<String>(
               value: _selectedRole,
-              items: ['Packer', 'Manager', 'Admin'].map((role) {
+              items: ['Admin', 'Account', 'Packer'].map((role) {
                 return DropdownMenuItem(value: role, child: Text(role));
               }).toList(),
-              hint: Text('Select a role'),
-              onChanged: (value) {
+              onChanged: (role) {
                 setState(() {
-                  _selectedRole = value;
-                  if (value != null) _handleRoleSelection(value);
+                  _selectedRole = role;
                 });
+                if (role != null) {
+                  _handleRoleSelection(role); // Handle role selection
+                }
               },
             ),
             SizedBox(height: 20),

@@ -9,7 +9,7 @@
         cd otp_login/invite_code_service
         fvm flutter run -d chrome --web-port=3001
 
-    <br><br>
+    <br>
 
 2. Progress<br>
     i.   Sign in using GOOGLE SIGN-IN (store data in storage if not signed out)<br>
@@ -21,11 +21,11 @@
     vii. Join Company (Join Company using the invitation code and join relevant subgroup)<br>
     viii.Keys stored in environment file rather than hardcoded<br>
     ix.  Encryption and Decryption processed at backend<br>
-    x.   Code lengths: 152<br><br><br>
+    x.   Code lengths: 152<br>
+    xi.  Role Mapping for Owner, Admin, Account and Packer<br><br><br>
 
 //TODO:<br>
 //shorten invitation code - could not find shortener for code, only url<br>
     flutter_url_shortener <br>
-//role mapping for admin only, will implement for other roles later<br>
-//Remove Admin join company option assuming that he is owner <br>
+
 

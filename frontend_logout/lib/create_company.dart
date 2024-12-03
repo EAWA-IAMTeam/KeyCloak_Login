@@ -23,7 +23,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
   final String keycloakUrl = '${Config.server}:8080/admin/realms/G-SSO-Connect';
   final String clientId = 'frontend-login';
   final String clientSecret = '0SSZj01TDs7812fLBxgwTKPA74ghnLQM';
-  final String clientRole = 'Admin';
+  final String clientRole = 'Owner';
 
   Future<String?> _getClientAccessToken() async {
     final keycloakTokenUrl =
@@ -138,8 +138,8 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
     if (token == null) return;
 
     try {
-      // Create the Admin subgroup if it doesn't exist
-      String? subgroupId = await _getGroupId('Admin', parentGroupId: groupId);
+      // Create the Owner subgroup if it doesn't exist
+      String? subgroupId = await _getGroupId('Owner', parentGroupId: groupId);
 
       if (subgroupId == null) {
         final response = await http.post(
@@ -148,14 +148,14 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
             'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
           },
-          body: jsonEncode({'name': 'Admin'}),
+          body: jsonEncode({'name': 'Owner'}),
         );
 
         if (response.statusCode == 201) {
-          print('Admin subgroup created successfully');
+          print('Owner subgroup created successfully');
         } else {
           print(
-              'Failed to create Admin subgroup. Status code: ${response.statusCode}');
+              'Failed to create Owner subgroup. Status code: ${response.statusCode}');
           print('Response body: ${response.body}');
           return;
         }
@@ -164,15 +164,15 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
         const int maxRetries = 5;
         const Duration retryDelay = Duration(seconds: 1);
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
-          print('Retrying to fetch Admin subgroup ID (Attempt $attempt)...');
+          print('Retrying to fetch Owner subgroup ID (Attempt $attempt)...');
           await Future.delayed(retryDelay);
-          subgroupId = await _getGroupId('Admin', parentGroupId: groupId);
+          subgroupId = await _getGroupId('Owner', parentGroupId: groupId);
           print("Subgroup id: $subgroupId");
           if (subgroupId != null) break;
         }
 
         if (subgroupId == null) {
-          print('Failed to retrieve Admin subgroup ID after creation.');
+          print('Failed to retrieve Owner subgroup ID after creation.');
           return;
         }
       }
@@ -187,7 +187,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
         return;
       }
 
-      // Add the user to the Admin subgroup
+      // Add the user to the Owner subgroup
       await _addUserToSubgroup(groupId, subgroupId, userId);
     } catch (e) {
       print('Error creating subgroup or assigning role: $e');
@@ -231,7 +231,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
       );
 
       if (response.statusCode == 204) {
-        print('User added to the Admin subgroup successfully');
+        print('User added to the Owner subgroup successfully');
       } else {
         print(
             'Failed to add user to subgroup. Status code: ${response.statusCode}');

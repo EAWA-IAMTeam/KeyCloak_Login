@@ -144,21 +144,19 @@ class _SelectCompanyforuserPageState extends State<SelectCompanyforuserPage> {
         List<String> fetchedParentIds = []; // List to store parent IDs
 
         for (var group in userGroups) {
-          if (group['name'] == 'Admin' && group['parentId'] != null) {
-            fetchedParentIds.add(group['parentId']);
-            print("GetAdminGroups (ParentId): " + fetchedParentIds.last);
+         if ((group['name'] == 'Admin' || group['name'] == 'Owner') &&
+              group['parentId'] != null) {
+            String? parentGroupName = await _getParentGroupName(group['parentId']);
+            if (parentGroupName != null && !adminGroups.contains(parentGroupName)) {
+              adminGroups.add(parentGroupName);
+            }
           }
         }
 
-        // Fetch parent group names and update the state
-        await _getParentGroupNames(fetchedParentIds);
 
-        // Sort group names alphabetically before updating state
-        parentGroupNames
-            .sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-
+        // Sort group names alphabetically
+        adminGroups.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
         setState(() {
-          adminGroups = parentGroupNames;
           selectedGroup = adminGroups.isNotEmpty ? adminGroups[0] : null;
         });
       } else {
@@ -170,36 +168,26 @@ class _SelectCompanyforuserPageState extends State<SelectCompanyforuserPage> {
     }
   }
 
-// Fetch parent group names using the fetched parent IDs
-  Future<void> _getParentGroupNames(List<String> parentIds) async {
+Future<String?> _getParentGroupName(String parentId) async {
     final token = await _getClientAccessToken();
-    if (token == null) return;
+    if (token == null) return null;
 
-    List<String> fetchedNames = [];
     try {
-      for (var parentId in parentIds) {
-        final groupResponse = await http.get(
-          Uri.parse('$keycloakUrl/groups/$parentId'),
-          headers: {'Authorization': 'Bearer $token'},
-        );
-        print(groupResponse.statusCode);
-        if (groupResponse.statusCode == 200) {
-          final group = jsonDecode(groupResponse.body);
-          if (group['name'] != null) {
-            fetchedNames.add(group['name']);
-            print("GetParentGroupNames (Group Name): " + group['name']);
-          }
-        } else {
-          print(
-              'Failed to fetch group name for parentId: $parentId. Status: ${groupResponse.statusCode}');
-        }
-      }
+      final groupResponse = await http.get(
+        Uri.parse('$keycloakUrl/groups/$parentId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
-      // Update the parent group names list
-      parentGroupNames = fetchedNames;
+      if (groupResponse.statusCode == 200) {
+        final group = jsonDecode(groupResponse.body);
+        return group['name'];
+      } else {
+        print('Failed to fetch parent group name: ${groupResponse.statusCode}');
+      }
     } catch (e) {
-      print('Error fetching parent group names: $e');
+      print('Error fetching parent group name: $e');
     }
+    return null;
   }
 
   @override
