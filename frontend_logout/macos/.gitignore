@@ -6,3 +6,4 @@
 **/dgph
 **/xcuserdata/
 .env
+otp_login/scripts/.env
