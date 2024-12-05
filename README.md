@@ -6,7 +6,7 @@
            
     Frontend:<br>
 
-        cd otp_login/invite_code_service
+        cd frontend_logout
         fvm flutter run -d chrome --web-port=3001
 
     <br>
