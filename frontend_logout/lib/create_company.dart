@@ -20,25 +20,18 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
   String companyEmail = '';
   List<String> existingGroups = []; // List to store existing group names
 
-  final String keycloakUrl = '${Config.server}:8080/admin/realms/G-SSO-Connect';
+  // final String keycloakUrl = '${Config.server}:8080/admin/realms/G-SSO-Connect';
   final String clientId = 'frontend-login';
-  final String clientSecret = '0SSZj01TDs7812fLBxgwTKPA74ghnLQM';
+  // final String clientSecret = '0SSZj01TDs7812fLBxgwTKPA74ghnLQM';
   final String clientRole = 'Owner';
 
   Future<String?> _getClientAccessToken() async {
-    final keycloakTokenUrl =
-        '${Config.server}:8080/realms/G-SSO-Connect/protocol/openid-connect/token';
 
     try {
       final response = await http.post(
-        Uri.parse(keycloakTokenUrl),
+        Uri.parse('${Config.server}:3002/api/token'),
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: {
-          'client_id': clientId,
-          'client_secret': clientSecret,
-          'grant_type': 'client_credentials',
+          'Content-Type': 'application/json',
         },
       );
 
@@ -65,7 +58,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
       if (parentGroupId == null) {
         // Fetch all top-level groups
         final response = await http.get(
-          Uri.parse('$keycloakUrl/groups'),
+          Uri.parse('${Config.server}:3002/api/groups'),
           headers: {'Authorization': 'Bearer $token'},
         );
 
@@ -83,7 +76,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
       } else {
         // Fetch subgroups of the parent group using the `/children` endpoint
         final response = await http.get(
-          Uri.parse('$keycloakUrl/groups/$parentGroupId/children'),
+          Uri.parse('${Config.server}:3002/api/childgroups?parentGroupId=$parentGroupId'),
           headers: {'Authorization': 'Bearer $token'},
         );
 
@@ -111,7 +104,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('$keycloakUrl/groups'),
+        Uri.parse('${Config.server}:3002/api/creategroups'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -143,7 +136,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
 
       if (subgroupId == null) {
         final response = await http.post(
-          Uri.parse('$keycloakUrl/groups/$groupId/children'),
+          Uri.parse('${Config.server}:3002/api/createsubgroups?parentGroupId=$groupId'),
           headers: {
             'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
@@ -220,7 +213,8 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
 
     try {
       final response = await http.put(
-        Uri.parse('$keycloakUrl/users/$userId/groups/$subgroupId'),
+        Uri.parse('${Config.server}:3002/api/adduser?userId=$userId&subgroupId=$subgroupId'),
+
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -249,7 +243,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
     try {
       // First, retrieve the internal ID of the client
       final clientResponse = await http.get(
-        Uri.parse('$keycloakUrl/clients?clientId=$clientId'),
+        Uri.parse('${Config.server}:3002/api/get-client?clientId=$clientId'),
         headers: {
           'Authorization': 'Bearer $token',
         },
@@ -266,7 +260,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
 
         // Now, fetch the client role using the internal ID
         final roleResponse = await http.get(
-          Uri.parse('$keycloakUrl/clients/$clientInternalId/roles/$clientRole'),
+          Uri.parse('${Config.server}:3002/api/get-client-role?clientInternalId=$clientInternalId&clientRole=$clientRole'),
           headers: {
             'Authorization': 'Bearer $token',
           },
@@ -276,7 +270,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
           final role = jsonDecode(roleResponse.body);
           final response = await http.post(
             Uri.parse(
-                '$keycloakUrl/groups/$groupId/role-mappings/clients/$clientInternalId'),
+                '${Config.server}:3002/api/assign-role-to-group?groupId=$groupId&clientInternalId=$clientInternalId'),
             headers: {
               'Authorization': 'Bearer $token',
               'Content-Type': 'application/json',
@@ -332,7 +326,7 @@ class _CreateCompanyPageState extends State<CreateCompanyPage> {
     if (token == null) return null;
 
     final response = await http.get(
-      Uri.parse('$keycloakUrl/groups'),
+      Uri.parse('${Config.server}:3002/api/groups'),
       headers: {'Authorization': 'Bearer $token'},
     );
 

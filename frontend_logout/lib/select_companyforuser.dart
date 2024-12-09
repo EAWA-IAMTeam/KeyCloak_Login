@@ -11,7 +11,8 @@ class SelectCompanyforuserPage extends StatefulWidget {
       : super(key: key);
 
   @override
-  State<SelectCompanyforuserPage> createState() => _SelectCompanyforuserPageState();
+  State<SelectCompanyforuserPage> createState() =>
+      _SelectCompanyforuserPageState();
 }
 
 class _SelectCompanyforuserPageState extends State<SelectCompanyforuserPage> {
@@ -20,27 +21,16 @@ class _SelectCompanyforuserPageState extends State<SelectCompanyforuserPage> {
   List<String> adminGroups = []; // Cache for admin groups
   // List to store parent group names
   List<String> parentGroupNames = [];
-
-  final String keycloakUrl = '${Config.server}:8080/admin/realms/G-SSO-Connect';
-  final String clientId = 'frontend-login';
-  final String clientSecret = '0SSZj01TDs7812fLBxgwTKPA74ghnLQM';
+  // final String clientSecret = '0SSZj01TDs7812fLBxgwTKPA74ghnLQM';
   final String clientRole = 'Admin';
 
   Future<String?> _getClientAccessToken() async {
-    final keycloakTokenUrl =
-        '${Config.server}:8080/realms/G-SSO-Connect/protocol/openid-connect/token';
+    final keycloakTokenUrl = '${Config.server}:3002/api/token';
 
     try {
-      final response = await http.post(
+      final response = await http.get(
         Uri.parse(keycloakTokenUrl),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: {
-          'client_id': clientId,
-          'client_secret': clientSecret,
-          'grant_type': 'client_credentials',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
@@ -66,7 +56,7 @@ class _SelectCompanyforuserPageState extends State<SelectCompanyforuserPage> {
       if (parentGroupId == null) {
         // Fetch all top-level groups
         final response = await http.get(
-          Uri.parse('$keycloakUrl/groups'),
+          Uri.parse('${Config.server}:3002/api/groups'),
           headers: {'Authorization': 'Bearer $token'},
         );
 
@@ -84,7 +74,7 @@ class _SelectCompanyforuserPageState extends State<SelectCompanyforuserPage> {
       } else {
         // Fetch subgroups of the parent group using the `/children` endpoint
         final response = await http.get(
-          Uri.parse('$keycloakUrl/groups/$parentGroupId/children'),
+          Uri.parse('${Config.server}:3002/api/childgroups'),
           headers: {'Authorization': 'Bearer $token'},
         );
 
@@ -133,8 +123,8 @@ class _SelectCompanyforuserPageState extends State<SelectCompanyforuserPage> {
     if (userId == null) return;
 
     try {
-      final userGroupsResponse = await http.get(
-        Uri.parse('$keycloakUrl/users/$userId/groups'),
+      final userGroupsResponse = await http.post(
+        Uri.parse('${Config.server}:3002/api/usergroups?userId=$userId'),
         headers: {'Authorization': 'Bearer $token'},
       );
       print(userGroupsResponse.statusCode);
@@ -144,15 +134,16 @@ class _SelectCompanyforuserPageState extends State<SelectCompanyforuserPage> {
         List<String> fetchedParentIds = []; // List to store parent IDs
 
         for (var group in userGroups) {
-         if ((group['name'] == 'Admin' || group['name'] == 'Owner') &&
+          if ((group['name'] == 'Admin' || group['name'] == 'Owner') &&
               group['parentId'] != null) {
-            String? parentGroupName = await _getParentGroupName(group['parentId']);
-            if (parentGroupName != null && !adminGroups.contains(parentGroupName)) {
+            String? parentGroupName =
+                await _getParentGroupName(group['parentId']);
+            if (parentGroupName != null &&
+                !adminGroups.contains(parentGroupName)) {
               adminGroups.add(parentGroupName);
             }
           }
         }
-
 
         // Sort group names alphabetically
         adminGroups.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
@@ -165,16 +156,17 @@ class _SelectCompanyforuserPageState extends State<SelectCompanyforuserPage> {
       }
     } catch (e) {
       print('Error fetching admin groups: $e');
+      _showNoCompaniesDialog();
     }
   }
 
-Future<String?> _getParentGroupName(String parentId) async {
+  Future<String?> _getParentGroupName(String parentId) async {
     final token = await _getClientAccessToken();
     if (token == null) return null;
 
     try {
       final groupResponse = await http.get(
-        Uri.parse('$keycloakUrl/groups/$parentId'),
+        Uri.parse('${Config.server}:3002/api/group-details?parentId=$parentId'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -188,6 +180,26 @@ Future<String?> _getParentGroupName(String parentId) async {
       print('Error fetching parent group name: $e');
     }
     return null;
+  }
+
+  void _showNoCompaniesDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('No Companies Found'),
+        content: const Text(
+            'You have not joined any companies. Join now or create your own company!'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Pop current page
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -206,7 +218,7 @@ Future<String?> _getParentGroupName(String parentId) async {
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [             
+            children: [
               DropdownButton<String>(
                 value: selectedGroup,
                 items: adminGroups
@@ -220,7 +232,7 @@ Future<String?> _getParentGroupName(String parentId) async {
                     selectedGroup = value;
                   });
                 },
-                hint: Text('Select Parent Group'),
+                hint: Text('Select Company'),
               ),
               SizedBox(height: 20),
               ElevatedButton(

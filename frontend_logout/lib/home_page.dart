@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:frontend_login/config.dart';
 import 'package:frontend_login/create_company.dart';
@@ -31,6 +33,23 @@ class _HomePageState extends State<HomePage> {
     // Revoke Google Access Token by calling Google's revocation endpoint
     final googleAccessToken = html.window.localStorage['googleAccessToken'];
     print("GAT: $googleAccessToken");
+
+    // if (googleAccessToken != null) {
+    //   // Call backend to handle Google logout and Keycloak logout
+    //   final url = Uri.parse('${Config.server}:3002/logout?googleAccessToken=$googleAccessToken?keycloakRefreshToken=${widget.keycloakRefreshToken}');
+    //   final response = await http.post(url);
+
+    //   if (response.statusCode == 200) {
+    //     // Successfully logged out from Google and Keycloak
+    //     html.window.localStorage.clear();
+    //     Navigator.pushReplacement(
+    //       context,
+    //       MaterialPageRoute(builder: (context) => const LoginPage()),
+    //     );
+    //   } else {
+    //     print('Error during logout: ${response.body}');
+    //   }
+    // }
     if (googleAccessToken != null) {
       final revokeUrl =
           'https://oauth2.googleapis.com/revoke?token=$googleAccessToken';
@@ -61,13 +80,10 @@ class _HomePageState extends State<HomePage> {
 
     print("Logout completed and cookies cleared.");
 
-    final keycloakLogoutUrl =
-        '${Config.server}:8080/realms/G-SSO-Connect/protocol/openid-connect/logout';
-
     // Perform Keycloak logout by calling Keycloak's logout endpoint
     try {
       final response = await http.post(
-        Uri.parse(keycloakLogoutUrl),
+        Uri.parse('${Config.server}:8080/realms/G-SSO-Connect/protocol/openid-connect/logout'),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
@@ -129,38 +145,66 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Function to refresh access token
-  Future<String?> _refreshAccessToken() async {
-    final refreshToken = widget.keycloakRefreshToken;
-    if (refreshToken.isNotEmpty) {
-      final url =
-          '${Config.server}:8080/realms/G-SSO-Connect/protocol/openid-connect/token';
-      try {
-        final response = await http.post(
-          Uri.parse(url),
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-          body: {
-            'client_id': 'frontend-login',
-            'client_secret': '0SSZj01TDs7812fLBxgwTKPA74ghnLQM',
-            'grant_type': 'refresh_token',
-            'refresh_token': refreshToken,
-          },
-        );
+  // Future<String?> _refreshAccessToken() async {
+  //   final refreshToken = widget.keycloakRefreshToken;
+  //   if (refreshToken.isNotEmpty) {
+  //     final url =
+  //         '${Config.server}:8080/realms/G-SSO-Connect/protocol/openid-connect/token';
+  //     try {
+  //       final response = await http.post(
+  //         Uri.parse(url),
+  //         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+  //         body: {
+  //           'client_id': 'frontend-login',
+  //           'client_secret': '0SSZj01TDs7812fLBxgwTKPA74ghnLQM',
+  //           'grant_type': 'refresh_token',
+  //           'refresh_token': refreshToken,
+  //         },
+  //       );
 
-        if (response.statusCode == 200) {
-          final responseBody = response.body;
-          // Extract the new access token from the response
-          final accessToken =
-              responseBody; // Modify this to extract the access token from JSON
-          return accessToken;
-        } else {
-          print('Failed to refresh token: ${response.statusCode}');
-        }
-      } catch (e) {
-        print('Error during token refresh: $e');
+  //       if (response.statusCode == 200) {
+  //         final responseBody = response.body;
+  //         // Extract the new access token from the response
+  //         final accessToken =
+  //             responseBody; // Modify this to extract the access token from JSON
+  //         return accessToken;
+  //       } else {
+  //         print('Failed to refresh token: ${response.statusCode}');
+  //       }
+  //     } catch (e) {
+  //       print('Error during token refresh: $e');
+  //     }
+  //   }
+  //   return null;
+  // }
+
+  Future<String?> _refreshAccessToken() async {
+  final refreshToken = widget.keycloakRefreshToken;
+  if (refreshToken.isNotEmpty) {
+    final url = Uri.parse('${Config.server}:3002/refresh-token');
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'refreshToken': refreshToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final responseBody = json.decode(response.body);
+        final accessToken = responseBody['access_token'];
+        return accessToken;
+      } else {
+        print('Failed to refresh token: ${response.statusCode}');
       }
+    } catch (e) {
+      print('Error during token refresh: $e');
     }
-    return null;
   }
+  return null;
+}
+
 
   // Function to call the API with the Keycloak access token
   Future<void> _callApiWithToken() async {
@@ -196,6 +240,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+     print("KCRT: " + widget.keycloakRefreshToken);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Home')),
@@ -216,7 +267,6 @@ class _HomePageState extends State<HomePage> {
                         Text(
                             'Keycloak Refresh Token: ${widget.keycloakRefreshToken}'),
                         SizedBox(height: 20),
-
                         // First Row with Select Company, Create Company, and Join Company
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
