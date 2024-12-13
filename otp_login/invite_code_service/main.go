@@ -169,9 +169,95 @@ func verifyHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func getKeycloakConfigHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Load the environment variables from the .env file
+	clientID := getEnv("KEYCLOAK_CLIENT_ID", "")
+	clientSecret := getEnv("KEYCLOAK_CLIENT_SECRET", "")
+
+	if clientID == "" || clientSecret == "" {
+		http.Error(w, "Missing Keycloak configuration", http.StatusInternalServerError)
+		return
+	}
+
+	// Prepare the response
+	response := map[string]string{
+		"KCID":     clientID,
+		"KCSecret": clientSecret,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// SetPersistentCookies sets a persistent cookie
+func setPersistentCookies(w http.ResponseWriter, r *http.Request) {
+	cookieName := r.URL.Query().Get("name")
+	cookieValue := r.URL.Query().Get("value")
+	if cookieName == "" || cookieValue == "" {
+		http.Error(w, "Missing cookie name or value", http.StatusBadRequest)
+		return
+	}
+
+	// Set cookie with a long expiration time
+	http.SetCookie(w, &http.Cookie{
+		Name:  cookieName,
+		Value: cookieValue,
+		Path:  "/",
+		// Expires:  time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC), // Expiry date set to year 9999
+		MaxAge:   34560000, // 400 days
+		Secure:   true,     // Only send over HTTPS
+		HttpOnly: true,     // Prevent JavaScript access
+		SameSite: http.SameSiteNoneMode,
+	})
+	w.WriteHeader(http.StatusOK)
+}
+
+// GetCookies retrieves a cookie value by its name
+func getCookies(w http.ResponseWriter, r *http.Request) {
+	cookieName := r.URL.Query().Get("name")
+	if cookieName == "" {
+		http.Error(w, "Missing cookie name", http.StatusBadRequest)
+		return
+	}
+
+	cookie, err := r.Cookie(cookieName)
+	if err != nil {
+		http.Error(w, "Cookie not found", http.StatusNotFound)
+		return
+	}
+
+	w.Write([]byte(cookie.Value))
+}
+
+// DeleteCookies deletes a cookie
+func deleteCookies(w http.ResponseWriter, r *http.Request) {
+	cookieName := r.URL.Query().Get("name")
+	if cookieName == "" {
+		http.Error(w, "Missing cookie name", http.StatusBadRequest)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:   cookieName,
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1, // Expire immediately
+	})
+	w.WriteHeader(http.StatusOK)
+}
+
 func main() {
 	http.HandleFunc("/encrypt", encryptHandler)
 	http.HandleFunc("/verify", verifyHandler)
+	http.HandleFunc("/keycloak-config", getKeycloakConfigHandler)
+	http.HandleFunc("/setCookie", setPersistentCookies)
+	http.HandleFunc("/getCookie", getCookies)
+	http.HandleFunc("/deleteCookie", deleteCookies)
 
 	fmt.Println("Server running at http://localhost:3002")
 	http.ListenAndServe(":3002", nil)

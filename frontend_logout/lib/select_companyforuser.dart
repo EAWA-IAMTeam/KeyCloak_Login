@@ -22,8 +22,8 @@ class _SelectCompanyforuserPageState extends State<SelectCompanyforuserPage> {
   List<String> parentGroupNames = [];
 
   final String keycloakUrl = '${Config.server}:8080/admin/realms/G-SSO-Connect';
-  final String clientId = 'frontend-login';
-  final String clientSecret = '0SSZj01TDs7812fLBxgwTKPA74ghnLQM';
+  String kcid = '';
+  String kcsecret = '';
   final String clientRole = 'Admin';
 
   Future<String?> _getClientAccessToken() async {
@@ -37,8 +37,8 @@ class _SelectCompanyforuserPageState extends State<SelectCompanyforuserPage> {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: {
-          'client_id': clientId,
-          'client_secret': clientSecret,
+          'client_id': kcid,
+          'client_secret': kcsecret,
           'grant_type': 'client_credentials',
         },
       );
@@ -190,11 +190,36 @@ Future<String?> _getParentGroupName(String parentId) async {
     return null;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _getAdminGroups();
+ Future<void> fetchKeycloakConfig() async {
+    final url = Uri.parse('http://localhost:3002/keycloak-config');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          kcid = data['KCID'];
+          kcsecret = data['KCSecret'];
+        });
+      } else {
+        print('Failed to fetch Keycloak config: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching Keycloak config: $e');
+    }
   }
+
+@override
+void initState() {
+  super.initState();
+  _initialize();
+}
+
+Future<void> _initialize() async {
+  await fetchKeycloakConfig();
+  await _getAdminGroups();
+}
 
   @override
   Widget build(BuildContext context) {

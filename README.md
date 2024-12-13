@@ -22,7 +22,9 @@
     viii.Keys stored in environment file rather than hardcoded<br>
     ix.  Encryption and Decryption processed at backend<br>
     x.   Code lengths: 152<br>
-    xi.  Role Mapping for Owner, Admin, Account and Packer<br><br><br>
+    xi.  Role Mapping for Owner, Admin, Account and Packer<br>
+    xii. Secret at backend .env file <br>
+    xiii.Tokens stored in cookies<br><br><br>
 
 //TODO:<br>
 //shorten invitation code - could not find shortener for code, only url<br>

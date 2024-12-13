@@ -236,8 +236,8 @@ class _InviteUserPageState extends State<InviteUserPage> {
   String? invitationCode;
   TextEditingController _codeController = TextEditingController();
   final String keycloakUrl = '${Config.server}:8080/admin/realms/G-SSO-Connect';
-  final String clientId = 'frontend-login';
-  final String clientSecret = '0SSZj01TDs7812fLBxgwTKPA74ghnLQM';
+  String kcid = '';
+  String kcsecret = '';
 
   Future<String?> _getClientAccessToken() async {
     final tokenUrl =
@@ -250,8 +250,8 @@ class _InviteUserPageState extends State<InviteUserPage> {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: {
-          'client_id': 'frontend-login',
-          'client_secret': '0SSZj01TDs7812fLBxgwTKPA74ghnLQM',
+          'client_id': kcid,
+          'client_secret': kcsecret,
           'grant_type': 'client_credentials',
         },
       );
@@ -331,7 +331,7 @@ class _InviteUserPageState extends State<InviteUserPage> {
     try {
       // First, retrieve the internal ID of the client
       final clientResponse = await http.get(
-        Uri.parse('$keycloakUrl/clients?clientId=$clientId'),
+        Uri.parse('$keycloakUrl/clients?clientId=$kcid'),
         headers: {
           'Authorization': 'Bearer $token',
         },
@@ -430,12 +430,37 @@ void _handleRoleSelection(String role) async {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
+ Future<void> fetchKeycloakConfig() async {
+    final url = Uri.parse('http://localhost:3002/keycloak-config');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          kcid = data['KCID'];
+          kcsecret = data['KCSecret'];
+        });
+      } else {
+        print('Failed to fetch Keycloak config: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching Keycloak config: $e');
+    }
+  }
+
+@override
+void initState() {
+  super.initState();
+  _initialize();
+}
+
+Future<void> _initialize() async {
+  await fetchKeycloakConfig();
     print("group id: " + widget.groupId.toString());
      _selectedRole = 'Admin';
-  }
+}
 
   @override
   Widget build(BuildContext context) {

@@ -383,6 +383,8 @@ class _JoinCompanyPageState extends State<JoinCompanyPage> {
   final _formKey = GlobalKey<FormState>();
 
   final String keycloakUrl = '${Config.server}:8080/admin/realms/G-SSO-Connect';
+  String kcid = '';
+  String kcsecret = '';
 
   Future<String?> _getClientAccessToken() async {
     final tokenUrl =
@@ -393,8 +395,8 @@ class _JoinCompanyPageState extends State<JoinCompanyPage> {
         Uri.parse(tokenUrl),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: {
-          'client_id': 'frontend-login',
-          'client_secret': '0SSZj01TDs7812fLBxgwTKPA74ghnLQM',
+          'client_id': kcid,
+          'client_secret': kcsecret,
           'grant_type': 'client_credentials',
         },
       );
@@ -618,6 +620,32 @@ class _JoinCompanyPageState extends State<JoinCompanyPage> {
         SnackBar(content: Text('Invalid invitation code.')),
       );
     }
+  }
+
+    Future<void> fetchKeycloakConfig() async {
+    final url = Uri.parse('http://localhost:3002/keycloak-config');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          kcid = data['KCID'];
+          kcsecret = data['KCSecret'];
+        });
+      } else {
+        print('Failed to fetch Keycloak config: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching Keycloak config: $e');
+    }
+  }
+
+    @override
+  void initState() {
+    super.initState();
+    fetchKeycloakConfig();
   }
 
   @override
