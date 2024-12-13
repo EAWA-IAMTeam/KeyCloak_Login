@@ -11,7 +11,7 @@
 
     <br>
 
-2. Progress<br>
+2. Progress<br><br>
     i.   Sign in using GOOGLE SIGN-IN (store data in storage if not signed out)<br>
     ii.  Signout (Kill KeyCloak Sessions, Clear storage and cookies)<br>
     iii. Connect to APISIX (domain mapping)<br>
@@ -24,7 +24,7 @@
     x.   Code lengths: 152<br>
     xi.  Role Mapping for Owner, Admin, Account and Packer<br>
     xii. Secret at backend .env file <br>
-    xiii.Tokens stored in cookies<br><br><br>
+    xiii.Tokens stored in cookies<br><br>
 
 //TODO:<br>
 //shorten invitation code - could not find shortener for code, only url<br>
