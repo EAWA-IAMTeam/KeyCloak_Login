@@ -1,4 +1,4 @@
-1. Run application
+1. Run application<br>
     Backend: <br>
 
         cd otp_login/invite_code_service
