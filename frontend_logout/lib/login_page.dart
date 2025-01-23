@@ -246,6 +246,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        // print(response.body);
         setState(() {
           kcid = data['KCID'];
           kcsecret = data['KCSecret'];
@@ -442,6 +443,7 @@ Future<void> setCookie(String name, String value) async {
       Uri.parse(keycloakUrl),
       body: {
         'grant_type': 'urn:ietf:params:oauth:grant-type:token-exchange',
+        'subject_token_type':'urn:ietf:params:oauth:token-type:access_token',
         'subject_token': googleAccessToken,
         'client_id': kcid,
         'client_secret': kcsecret,
@@ -455,6 +457,7 @@ Future<void> setCookie(String name, String value) async {
       setCookie('logoutBool', "false");
       return data;
     } else {
+      print(response.statusCode);
       print('Failed to exchange token with Keycloak');
       print(response.body);
       return null;

@@ -607,7 +607,7 @@ Future<String?> getCookie(String name) async {
         print('Using token: $token'); // Log token to ensure it's correct
         final response = await http.get(
           Uri.parse(
-              'http:/example.com:9080/headers'), // Replace with your actual API
+              'http:/example.com:9080/headers'), // http:/example.com:9080/lazada/fetch-products
           headers: {'Authorization': 'Bearer $token'},
         );
 
@@ -666,11 +666,11 @@ Future<String?> getCookie(String name) async {
               widget.keycloakAccessToken.isNotEmpty
                   ? Column(
                       children: [
-                        Text('Email: ${widget.email}'),
-                        SizedBox(height: 10),
-                        Text(
-                            'Keycloak Access Token: ${widget.keycloakAccessToken}'),
-                        SizedBox(height: 10),
+                        //Text('Email: ${widget.email}'),
+                        //SizedBox(height: 10),
+                        //Text(
+                        //    'Keycloak Access Token: ${widget.keycloakAccessToken}'),
+                        //SizedBox(height: 10),
                         Text(
                             'Keycloak Refresh Token: ${widget.keycloakRefreshToken}'),
                         SizedBox(height: 20),

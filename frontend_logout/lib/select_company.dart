@@ -389,4 +389,3 @@ Future<void> _initialize() async {
     );
   }
 }
-
