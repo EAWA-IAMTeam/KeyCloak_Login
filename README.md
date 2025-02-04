@@ -1,3 +1,4 @@
+Refer repository WebApp, branch frontend, folder WebAppFrontEnd for further updates (Linking with product, stores, from mock sql account web app to ecommerce web app until database)
 1. Run application<br><br>
     Backend: <br>
 
@@ -28,6 +29,6 @@
 
 //TODO:<br>
 //shorten invitation code - could not find shortener for code, only url<br>
-    flutter_url_shortener <br>
+    flutter_url_shortener <br><br>
 
 
